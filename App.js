@@ -1,16 +1,5 @@
-
-
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  TextInput,
-  FlatList,
-  Image,
-  StatusBar,
-} from "react-native";
+import { StyleSheet, Text, View, SafeAreaView, TextInput, FlatList, Image, StatusBar } from "react-native";
 import { MeiliSearch } from "meilisearch";
 
 const client = new MeiliSearch({
@@ -29,15 +18,12 @@ const documents = [
     { id: 6, title: 'Philadelphia', genres: ['Drama'] },
 ];
 
-
 const App = () => {
   const [query, setQuery] = useState(""); 
   const [results, setResults] = useState([]); 
 
-
   const ObtenerBusqueda = async (text) => {
     setQuery(text);
-
 
     if (text.trim() === "") {
       setResults([]); 
@@ -46,9 +32,8 @@ const App = () => {
 
     try {
       const searchResults = await client.index("movies").search(text, {});
-
-      console.log(searchResults) // => { "uid": 0 }
-
+      
+      console.log(searchResults)
 
       setResults(searchResults.hits); 
     } catch (error) {
@@ -65,12 +50,11 @@ const App = () => {
       <View style={styles.searchBarContainer}>
         <TextInput
           style={styles.searchBar}
-          placeholder="Escribe aquí..."
+          placeholder="Realiza una Busqueda..."
           value={query}
           onChangeText={ObtenerBusqueda}
         />
       </View>
-
       <FlatList
         data={results}
         keyExtractor={(item) => item.id.toString()}
@@ -95,7 +79,6 @@ const App = () => {
 };
 
 export default App;
-
 
 const styles = StyleSheet.create({
   container: {
