@@ -1,116 +1,144 @@
-import { StyleSheet, Text, View, SafeAreaView, TextInput, FlatList, Image, StatusBar } from "react-native";
-import React from "react";
-import { instantMeiliSearch } from "@meilisearch/instant-meilisearch";
-import {connectSearchBox, connectInfiniteHits} from 'react-instantsearch-native';
-import { InstantSearch } from "react-instantsearch-native"; 
+
+
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  TextInput,
+  FlatList,
+  Image,
+  StatusBar,
+} from "react-native";
+import { MeiliSearch } from "meilisearch";
+
+const client = new MeiliSearch({
+  host: "http://172.233.129.212", 
+  apiKey: "2a5fb1e956eccf0fd9e1555842e4b6bd96fe244fabfe83b9e15a1487816d", 
+});
+
+const index = client.index('movies');
+
+const documents = [
+    { id: 1, title: 'Carol', genres: ['Romance', 'Drama'] },
+    { id: 2, title: 'Wonder Woman', genres: ['Action', 'Adventure'] },
+    { id: 3, title: 'Life of Pi', genres: ['Adventure', 'Drama'] },
+    { id: 4, title: 'Mad Max: Fury Road', genres: ['Adventure', 'Science Fiction'] },
+    { id: 5, title: 'Moana', genres: ['Fantasy', 'Action']},
+    { id: 6, title: 'Philadelphia', genres: ['Drama'] },
+];
+
 
 const App = () => {
+  const [query, setQuery] = useState(""); 
+  const [results, setResults] = useState([]); 
 
-  const searchClient = instantMeiliSearch(
-    'http://172.233.129.212',
-    '2a5fb1e956eccf0fd9e1555842e4b6bd96fe244fabfe83b9e15a1487816d'
-  );
 
-  const SearchBox = ({ refine, currentRefinement}) => {
-    return(
-        <View style ={styles.searchBarContainer}>
-            <View style ={styles.searchBar}>
-                <TextInput
-                    style = {styles.input}
-                    onChangeText={ value => refine(value)}
-                    value ={currentRefinement}
-                    placeholder=" Escribe aqui"
-                />
-            </View>
-        </View>
-    )
-  }
+  const ObtenerBusqueda = async (text) => {
+    setQuery(text);
 
-  const CustomSearchBox = connectSearchBox(SearchBox);
 
-  const InfiniteHits = ({hits}) => {
-    return(
-        <FlatList
-            data = {hits}
-            keyExtractor={item => item.id}
-            renderItem={({item}) => (
-                <View style ={styles.InfiniteHitsContainer}>
-                    <View style ={styles.InfiniteHits}>
-                        <Image
-                            source = {{
-                                uri: item.image,
-                            }}
-                            style = {{
-                                width: 100,
-                                height: 50,
-                            }}
-                            resizeMode = "contain"
-                        />
-                        <View style ={styles.TextContainer}>
-                            <Text style = { styles.namedText}> {item.name} </Text>
-                        </View>
-                    </View>
-                </View>
-            )}
-        />
-    );
+    if (text.trim() === "") {
+      setResults([]); 
+      return;
+    }
+
+    try {
+      const searchResults = await client.index("movies").search(text, {});
+
+      console.log(searchResults) // => { "uid": 0 }
+
+
+      setResults(searchResults.hits); 
+    } catch (error) {
+      console.error("Error realizando la búsqueda:", {...error});
+      if (error.response) {
+        console.log("Detalles de la respuesta:", error.response);
+      }
+    }
   };
 
-  const CustomInfiniteHits = connectInfiniteHits(InfiniteHits)
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#00BCD4" translucent={true} />
+      <View style={styles.searchBarContainer}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Escribe aquí..."
+          value={query}
+          onChangeText={ObtenerBusqueda}
+        />
+      </View>
 
-    return(
-        <SafeAreaView style ={styles.container}>
-            <StatusBar
-                barStyle="light-content"
-                //hidden={false}
-                backgroundColor="00BCD4"
-                translucent = {true}
+      <FlatList
+        data={results}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.resultItem}>
+            <Image
+              source={{ uri: item.poster }}
+              style={styles.resultImage}
+              resizeMode="contain"
             />
-            <InstantSearch indexName ="movies" searchClient = {searchClient}>
-                <CustomSearchBox/>
-                <CustomInfiniteHits/>
-            </InstantSearch>
-            <Text>App</Text>
-        </SafeAreaView>
-    );
+            <View style={styles.resultTextContainer}>
+              <Text style={styles.resultTitle}>{item.title}</Text>
+            </View>
+          </View>
+        )}
+        ListEmptyComponent={
+          query !== "" && <Text style={styles.emptyText}>No se encontraron resultados.</Text>
+        }
+      />
+    </SafeAreaView>
+  );
 };
 
 export default App;
 
+
 const styles = StyleSheet.create({
-    container:{
-        backgroundColor:"#300B58",
-    },
-    searchBarContainer:{
-        padding:20,
-    },
-    searchBar:{
-        backgroundColor: "#fff",
-        height:50,
-        borderRadius: 10,
-        justifyContent:'center',
-        //align:'center'
-        paddingHorizontal:10
-    }, 
-    InfiniteHitsContainer:{
-        padding:20,
-    },
-    InfiniteHits:{
-        backgroundColor: "#fff",
-        height:80,
-        borderRadius: 10,
-        //justifyContent:'center',
-        alignItems:'center',
-        paddingHorizontal:10,
-        flexDirection:"row"
-    },
-    TextContainer:{
-        padding:20,   
-    },
-    namedText:{
-        fontSize:18,
-        fontWeight:'bold',
-        width:200,
-        height:50,
-    }
+  container: {
+    flex: 1,
+    backgroundColor: "#300B58",
+    paddingTop:50,
+    padding:12
+  },
+  searchBarContainer: {
+    marginBottom: 16,
+  },
+  searchBar: {
+    backgroundColor: "#fff",
+    height: 50,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+  },
+  resultItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8
+  },
+  resultImage: {
+    width: 80,
+    height: 80,
+    marginRight: 16,
+  },
+  resultTextContainer: {
+    flex: 1,
+  },
+  resultTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#fff",
+    fontSize: 16,
+    marginTop: 16,
+  },
 });
