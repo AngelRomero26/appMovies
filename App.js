@@ -2,12 +2,12 @@ import { StyleSheet, Text, View, SafeAreaView, TextInput, FlatList, Image, Statu
 import React from "react";
 import { instantMeiliSearch } from "@meilisearch/instant-meilisearch";
 import {connectSearchBox, connectInfiniteHits} from 'react-instantsearch-native';
-import {InstantSearch} from 'react-instantsearch-native';
+import { InstantSearch } from "react-instantsearch-native"; 
 
 const App = () => {
 
   const searchClient = instantMeiliSearch(
-    '172.233.129.212',
+    'http://172.233.129.212',
     '2a5fb1e956eccf0fd9e1555842e4b6bd96fe244fabfe83b9e15a1487816d'
   );
 
